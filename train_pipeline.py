@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, RandomFlip, RandomRotation, RandomZoom, RandomBrightness
 from tensorflow.keras.utils import to_categorical
 
 DATASET_PATH = 'dataset'
@@ -31,7 +31,7 @@ def load_data(img_size):
         class_dir = os.path.join(DATASET_PATH, class_name)
         if not os.path.isdir(class_dir): continue
         
-        for img_name in os.listdir(class_dir)[:800]:
+        for img_name in os.listdir(class_dir):
             img_path = os.path.join(class_dir, img_name)
             img = cv2.imread(img_path)
             if img is not None:
@@ -91,7 +91,7 @@ grid_search.fit(X_train_pca, y_train)
 print(f"Best RF Parameters: {grid_search.best_params_}")
 print(f"Optimized RF Accuracy: {grid_search.best_score_:.4f}")
 
-print("\n--- Training CNN Model ---")
+print("\n--- Training INDUSTRY LEVEL CNN Model ---")
 X_cnn, _ = load_data(IMG_SIZE_CNN)
 X_cnn = X_cnn / 255.0 # Normalize
 y_cnn_cat = to_categorical(y_encoded)
@@ -99,11 +99,20 @@ y_cnn_cat = to_categorical(y_encoded)
 X_train_cnn, X_test_cnn, y_train_cnn, y_test_cnn = train_test_split(X_cnn, y_cnn_cat, test_size=0.2, random_state=42)
 
 cnn_model = Sequential([
-    Conv2D(32, (3,3), activation='relu', input_shape=(IMG_SIZE_CNN, IMG_SIZE_CNN, 3)),
+    # --- INDUSTRY DATA AUGMENTATION LAYERS ---
+    RandomFlip("horizontal_and_vertical", input_shape=(IMG_SIZE_CNN, IMG_SIZE_CNN, 3)),
+    RandomRotation(0.2), 
+    RandomZoom(0.2),     
+    RandomBrightness(factor=0.2), 
+
+    # --- EXISTING FEATURE EXTRACTION ---
+    Conv2D(32, (3,3), activation='relu'),
     MaxPooling2D(2,2),
     Conv2D(64, (3,3), activation='relu'),
     MaxPooling2D(2,2),
     Flatten(),
+    
+    # --- EXISTING BRAIN & OUTPUT ---
     Dense(128, activation='relu'),
     Dropout(0.5),
     Dense(len(le.classes_), activation='softmax')
@@ -115,6 +124,7 @@ history = cnn_model.fit(X_train_cnn, y_train_cnn, epochs=10, validation_data=(X_
 
 cnn_model.save('phyto_cnn_model.h5')
 np.save('classes.npy', le.classes_)
+
 print("\n--- CNN Evaluation ---")
 y_pred_cnn = np.argmax(cnn_model.predict(X_test_cnn), axis=1)
 y_true_cnn = np.argmax(y_test_cnn, axis=1)
