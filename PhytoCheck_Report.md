@@ -100,5 +100,4 @@ A: Classical models (LR, KNN) treat images as 1D arrays of isolated pixels, losi
 
 Q4: How would you improve this system in the future?
 A: 1.  Data Augmentation: Rotating, flipping, and zooming images to make the model robust to different lighting and angles.
-2.  Transfer Learning: Using pre-trained models like ResNet50 or MobileNetV2 for higher accuracy.
-3.  Deployment: Converting the model to TensorFlow Lite and building a mobile app so farmers can take pictures directly in the field.
+2.  Deployment: Converting the model to TensorFlow Lite and building a mobile app so farmers can take pictures directly in the field.
